@@ -1,116 +1,152 @@
-cask "iterm2-shader-cli" do
-    version "0.8.0"
-    sha256 "0ebc3374e0dcfb14557fe37105c0c46e24bf641e9c31858fc8cb2f8a3bb72ca7"
+ cask "iterm2-shader-cli" do
+    version "2026.05.22"
+    sha256 "9e0ba9ef2241122e124233f80f31e05f79d4e6d9afebec6f15fb9444ad300045"
 
-    url "https://github.com/yatharth023/iTerm2Shader/releases/download/v0.8.0/PremiumTerminalShader-2026.05.26-v2.tar.gz"
+    url "https://github.com/yatharthkhattri/iTerm2ShaderCLI/releases/download/v#{version}/PremiumTerminalShader-#{version}.tar.gz"
     name "iTerm2 Shader CLI"
     desc "Premium GPU-accelerated shader engine for terminal backgrounds"
-    homepage "https://github.com/yatharth023/iTerm2Shader"
+    homepage "https://github.com/yatharthkhattri/iTerm2ShaderCLI"
 
-    # Requires macOS 13.0+ (Ventura) for Metal and Swift features
     depends_on macos: ">= :ventura"
 
     app "PremiumTerminalShader.app"
 
-    # Create symlink for command-line access
-    binary "#{appdir}/PremiumTerminalShader.app/Contents/MacOS/PremiumTerminalShader", target: "iterm2-shader"
-
     postflight do
-      # Create preferences directory
-      system_command "/bin/mkdir",
-                     args: ["-p", "#{Dir.home}/.claude/projects/-Users-#{ENV['USER']}-Desktop-iTerm2ShaderCLI/memory"]
-
-      # Set executable permissions
+      # Set executable permissions on the daemon binary
       system_command "/bin/chmod",
                      args: ["+x", "#{appdir}/PremiumTerminalShader.app/Contents/MacOS/PremiumTerminalShader"]
+
+      # Write the CLI wrapper script
+      wrapper = <<~SCRIPT
+        #!/bin/bash
+        #
+        # iterm2-shader — command-line interface for PremiumTerminalShader daemon
+        #
+
+        APP="#{appdir}/PremiumTerminalShader.app/Contents/MacOS/PremiumTerminalShader"
+        PROCESS_NAME="PremiumTerminalShader"
+
+        usage() {
+          cat <<'HELP'
+        ┌─────────────────────────────────────────────────────┐
+        │           iterm2-shader · CLI Interface              │
+        │   Premium GPU-Accelerated Terminal Shader Engine     │
+        ├─────────────────────────────────────────────────────┤
+        │                                                     │
+        │  USAGE:                                             │
+        │    iterm2-shader <command>                           │
+        │                                                     │
+        │  COMMANDS:                                          │
+        │    start    Launch the shader daemon (background)   │
+        │    stop     Stop the running shader daemon          │
+        │    next     Cycle to the next shader preset         │
+        │    prev     Cycle to the previous shader preset     │
+        │    list     Show all available shader presets       │
+        │                                                     │
+        │  EXAMPLES:                                          │
+        │    iterm2-shader start                              │
+        │    iterm2-shader next                               │
+        │    iterm2-shader stop                               │
+        │                                                     │
+        └─────────────────────────────────────────────────────┘
+        HELP
+        }
+
+        case "${1}" in
+          start)
+            if pgrep -x "$PROCESS_NAME" > /dev/null 2>&1; then
+              echo "▸ Shader daemon is already running (PID $(pgrep -x $PROCESS_NAME))"
+            else
+              "$APP" > /dev/null 2>&1 &
+              echo "▸ Shader daemon launched"
+            fi
+            ;;
+          stop)
+            if pgrep -x "$PROCESS_NAME" > /dev/null 2>&1; then
+              killall "$PROCESS_NAME"
+              echo "▸ Shader daemon stopped"
+            else
+              echo "▸ No shader daemon running"
+            fi
+            ;;
+          next)
+            if pgrep -x "$PROCESS_NAME" > /dev/null 2>&1; then
+              pkill -USR1 "$PROCESS_NAME"
+              echo "▸ Switched to next preset"
+            else
+              echo "▸ No shader daemon running — start it with: iterm2-shader start"
+            fi
+            ;;
+          prev)
+            if pgrep -x "$PROCESS_NAME" > /dev/null 2>&1; then
+              pkill -USR2 "$PROCESS_NAME"
+              echo "▸ Switched to previous preset"
+            else
+              echo "▸ No shader daemon running — start it with: iterm2-shader start"
+            fi
+            ;;
+          list)
+            cat <<'PRESETS'
+        ┌─────────────────────────────────────────────────────┐
+        │              Available Shader Presets                │
+        ├─────────────────────────────────────────────────────┤
+        │                                                     │
+        │   1.  Spaceflight            Star field flythrough  │
+        │   2.  Night-Sky-Flight       Starry night clouds    │
+        │   3.  Morning-Sky-Flight     Sunrise golden hour    │
+        │   4.  Ocean-Wave-Flight      Realistic ocean waves  │
+        │   5.  Evening-Sky-Flight     Sunset atmosphere      │
+        │                                                     │
+        └─────────────────────────────────────────────────────┘
+        PRESETS
+            ;;
+          -h|--help|help|"")
+            usage
+            ;;
+          *)
+            echo "Unknown command: ${1}"
+            echo "Run 'iterm2-shader --help' for usage information."
+            exit 1
+            ;;
+        esac
+      SCRIPT
+
+      # Write wrapper to Homebrew bin directory
+      wrapper_path = "#{HOMEBREW_PREFIX}/bin/iterm2-shader"
+      File.write(wrapper_path, wrapper)
+      system_command "/bin/chmod",
+                     args: ["+x", wrapper_path]
     end
 
-    uninstall quit: "com.premiumterminalshader.app"
-  
+    uninstall_preflight do
+      # Remove the CLI wrapper script
+      wrapper_path = "#{HOMEBREW_PREFIX}/bin/iterm2-shader"
+      File.delete(wrapper_path) if File.exist?(wrapper_path)
+    end
+
+    uninstall quit:   "com.premiumterminalshader.app",
+              signal: ["TERM", "com.premiumterminalshader.app"]
+
     zap trash: [
       "~/Library/Preferences/com.premiumterminalshader.app.plist",
       "~/Library/Application Support/PremiumTerminalShader",
       "~/Library/Caches/com.premiumterminalshader.app",
-      "~/.claude/projects/-Users-#{ENV['USER']}-Desktop-iTerm2ShaderCLI"
     ]
 
-    # Installation verification and release notes
     caveats <<~EOS
-      ✅ PremiumTerminalShader v0.8.0 installed successfully!
+      iTerm2 Shader CLI installed successfully!
 
-      🎉 WHAT'S NEW IN v0.8.0 - Major Performance & Color Fix Update
+      Usage:
+        iterm2-shader start   Launch the shader daemon
+        iterm2-shader stop    Stop the shader daemon
+        iterm2-shader next    Cycle to next preset
+        iterm2-shader prev    Cycle to previous preset
+        iterm2-shader list    Show available presets
 
-      🎨 CRITICAL COLOR FIXES:
-        • Fixed BGRA color channel bug - all shaders now display accurate colors!
-        • Morning-Sky-Flight: Now realistic bright blue (was orange/brown)
-        • Ocean-Wave-Flight: Deep ocean blues (was orange/black)
-        • Night-Sky-Flight: Proper dark cosmic backdrop
-        • Evening-Sky-Flight: Natural sunset gradient with clouds drifting right-to-left
+      The daemon runs as a headless background process.
+      Preset cycling is controlled via UNIX signals (USR1/USR2).
 
-      ⚡ MASSIVE PERFORMANCE IMPROVEMENTS (3× smoother!):
-        • Internal rendering: 30 FPS → 60 FPS (2× faster)
-        • iTerm2 refresh rate: 15 FPS → 45 FPS (3× improvement)
-        • All shaders optimized (25-40% performance boost)
-        • Buttery smooth animation with no lag
-
-      ✨ VISUAL ENHANCEMENTS:
-        • Morning-Sky: Bright realistic blue morning sky with white clouds
-        • Night-Sky: Glowing stars with radiant halos + white clouds moving right-to-left
-        • Evening-Sky: Sunless sunset gradient (deep purple → amber horizon) + drifting clouds
-        • Ocean-Wave: Pure deep ocean blues with cyan wave crests
-        • All clouds: Pure white/neutral (no color bias)
-
-      🚀 QUICK START:
-        1. Launch the app:
-           open -a PremiumTerminalShader
-
-           Or run in background:
-           iterm2-shader &
-
-        2. Keyboard shortcuts:
-           • Cmd+1  : Cycle through presets
-           • Cmd+,  : Open settings panel
-
-      🎨 AVAILABLE PRESETS:
-        • Spaceflight          : 3D star field with forward motion
-        • Night-Sky-Flight     : Dark cosmic sky with glowing stars + drifting white clouds
-        • Morning-Sky-Flight   : Bright blue morning sky (NOW ACTUALLY BLUE!)
-        • Ocean-Wave-Flight    : Deep ocean blues with rolling waves (NOW ACTUALLY BLUE!)
-        • Evening-Sky-Flight   : Sunset gradient with right-to-left cloud drift
-
-      ⚙️   SETTINGS PANEL:
-        • Real-time shader parameter tuning
-        • 7 adjustable controls (Intensity, Speed, Depth, Contrast, Color Temp, Glow, Typing Reactivity)
-        • Live preview while adjusting
-        • Auto-save on change
-
-      📝 Settings persist across restarts and are stored in:
-         ~/Library/Preferences/com.premiumterminalshader.app.plist
-
-      📊 PERFORMANCE:
-        • Smooth 60 FPS internal rendering
-        • 45 FPS iTerm2 background updates
-        • Optimized GPU usage for battery efficiency
-
-      🔧 REQUIREMENTS:
-        • macOS 13.0+ (Ventura or later)
-        • iTerm2 3.0.0+
-        • Apple Silicon or Intel Mac
-
-      📝 LOGS:
-         Logs are written to: /tmp/iterm2shader.log
-         View logs: tail -f /tmp/iterm2shader.log
-
-      🐛 TROUBLESHOOTING:
-        • Ensure iTerm2 3.0.0+ is installed
-        • Background appears within 2 seconds of launch
-        • Check logs if issues occur
-
-      🐛 REPORT ISSUES:
-         https://github.com/yatharth023/iTerm2ShaderCLI/issues
-      📖 FULL DOCUMENTATION:
-         https://github.com/yatharth023/iTerm2ShaderCLI/blob/main/README.md
-
-      🎉 Enjoy your beautifully colored and buttery smooth animated terminal backgrounds!
+      Report issues:
+        https://github.com/yatharthkhattri/iTerm2ShaderCLI/issues
     EOS
-end
+  end
