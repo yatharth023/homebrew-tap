@@ -152,6 +152,6 @@ cask "iterm2-shader-cli" do
     Preset cycling is controlled via UNIX signals (USR1/USR2).
 
     Report issues:
-      https://github.com/yatharthkhattri/iTerm2ShaderCLI/issues
+      https://github.com/yatharth023/iTerm2Shader/issues
   EOS
 end
