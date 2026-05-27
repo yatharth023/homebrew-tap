@@ -2,10 +2,10 @@ cask "iterm2-shader-cli" do
   version "2026.05.27"
   sha256 "a6f1d5c9720730ad48e062f1b26ccb6d0dab8de4b4aa501d4d4337a163d55e14"
 
-  url "https://github.com/yatharthkhattri/iTerm2ShaderCLI/releases/download/v0.8.0/PremiumTerminalShader-2026.05.27.tar.gz"
+  url "https://github.com/yatharthkhattri/iTerm2Shader/releases/download/v0.8.0/PremiumTerminalShader-2026.05.27.tar.gz"
   name "iTerm2 Shader CLI"
   desc "Premium GPU-accelerated shader engine for terminal backgrounds"
-  homepage "https://github.com/yatharthkhattri/iTerm2ShaderCLI"
+  homepage "https://github.com/yatharthkhattri/iTerm2Shader"
 
   depends_on macos: ">= :ventura"
 
