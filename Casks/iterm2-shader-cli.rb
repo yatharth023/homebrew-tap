@@ -12,6 +12,11 @@ cask "iterm2-shader-cli" do
   app "PremiumTerminalShader.app"
 
   postflight do
+
+    # Automatically remove the macOS Gatekeeper quarantine flag
+    system_command "/usr/bin/xattr",
+                   args: ["-rd", "com.apple.quarantine", "#{appdir}/PremiumTerminalShader.app"]
+
     # Set executable permissions on the daemon binary
     system_command "/bin/chmod",
                    args: ["+x", "#{appdir}/PremiumTerminalShader.app/Contents/MacOS/PremiumTerminalShader"]
