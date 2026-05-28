@@ -2,10 +2,10 @@ cask "iterm2-shader-cli" do
     version "2026.05.28"
     sha256 "96261f7b5ea9bda607409703fe2364af9bc5be4f597875f86cea830ee7023118"
 
-    url "https://github.com/yatharth023/iTerm2ShaderCLI/releases/download/v0.8.0/PremiumTerminalShader-2026.05.28.tar.gz"
+    url "https://github.com/yatharth023/iTerm2Shader/releases/download/v0.8.0/PremiumTerminalShader-2026.05.28.tar.gz"
     name "iTerm2 Shader CLI"
     desc "Premium GPU-accelerated shader engine for terminal backgrounds"
-    homepage "https://github.com/yatharth023/iTerm2ShaderCLI"
+    homepage "https://github.com/yatharth023/iTerm2Shader"
 
     depends_on macos: ">= :ventura"
 
@@ -170,6 +170,6 @@ cask "iterm2-shader-cli" do
       Auto-terminates when parent terminal session exits.
 
       Report issues:
-        https://github.com/yatharth023/iTerm2ShaderCLI/issues
+        https://github.com/yatharth023/iTerm2Shader/issues
     EOS
   end
