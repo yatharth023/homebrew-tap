@@ -173,10 +173,3 @@ cask "iterm2-shader-cli" do
         https://github.com/yatharth023/iTerm2ShaderCLI/issues
     EOS
   end
-
-  Changes made:
-
-  1. stop command — Added a while pgrep wait-loop (up to 3s in 100ms ticks) that blocks until the process fully exits before printing success. Eliminates the race on stop → start.
-  2. Signal handler deadlock fix — USR1/USR2 now dispatch to a dedicated signalQueue with a guard (isProcessingSignal) that drops rapid duplicate signals. The actual preset switch
-  is dispatched async to main, so the signal handler returns instantly and never blocks.
-  3. next/prev commands — Added a 150ms sleep before the iTerm2 background clear to let the engine finish its preset swap before wiping the frame.
