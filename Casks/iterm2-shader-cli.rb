@@ -1,6 +1,6 @@
   cask "iterm2-shader-cli" do
     version "2026.05.28"
-    sha256 "71a60165853687b4ac55f1e283fb32fde087009b87e9ddfc71c95fd04badf932"
+    sha256 "bde507f73e92444e1bd8bcb715233f0af1e527a3a8102df3f228971a403916cb"
 
     url "https://github.com/yatharth023/iTerm2Shader/releases/download/v0.8.0/PremiumTerminalShader-2026.05.28.tar.gz"
     name "iTerm2 Shader CLI"
