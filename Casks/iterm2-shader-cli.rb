@@ -112,8 +112,13 @@ cask "iterm2-shader-cli" do
   end
 
   uninstall_preflight do
-    system_command "/usr/bin/killall", args: ["iterm2-shader-engine"],冒: false rescue nil
-    osascript -e 'tell application "iTerm" to set background image of current session of current window to ""' >/dev/null 2>&1
+    # Gracefully shut down the daemon engine if running
+    system "/usr/bin/killall", "iterm2-shader-engine" rescue nil
+    
+    # Execute the clear script natively within a valid system execution wrapper
+    system "osascript", "-e", 'tell application "iTerm" to set background image of current session of current window to ""' rescue nil
+    
+    # Clean up the binary link wrapper script
     wrapper_path = "#{HOMEBREW_PREFIX}/bin/iterm2-shader"
     File.delete(wrapper_path) if File.exist?(wrapper_path)
   end
