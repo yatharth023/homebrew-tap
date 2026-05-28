@@ -1,29 +1,23 @@
 cask "iterm2-shader-cli" do
     version "2026.05.28"
-    sha256 "96261f7b5ea9bda607409703fe2364af9bc5be4f597875f86cea830ee7023118"
+    sha256 "e33ba2c5b4fa81ccd28bc24fe65d2dddcd30ac7461be5a5e5bd3fadcff180a26"
 
-    url "https://github.com/yatharth023/iTerm2Shader/releases/download/v0.8.0/PremiumTerminalShader-2026.05.28.tar.gz"
+    url "https://github.com/yatharth023/iTerm2ShaderCLI/releases/download/v0.8.0/PremiumTerminalShader-2026.05.28.tar.gz"
     name "iTerm2 Shader CLI"
     desc "Premium GPU-accelerated shader engine for terminal backgrounds"
-    homepage "https://github.com/yatharth023/iTerm2Shader"
+    homepage "https://github.com/yatharth023/iTerm2ShaderCLI"
 
     depends_on macos: ">= :ventura"
 
     binary "iterm2-shader-engine", target: "#{HOMEBREW_PREFIX}/bin/iterm2-shader-engine"
 
     postflight do
-      # Copy metallib alongside the binary
       metallib_src = "#{staged_path}/default.metallib"
       metallib_dst = "#{HOMEBREW_PREFIX}/bin/default.metallib"
       FileUtils.cp(metallib_src, metallib_dst) if File.exist?(metallib_src)
 
-      # Write the CLI wrapper script
       wrapper = <<~SCRIPT
         #!/bin/bash
-        #
-        # iterm2-shader — command-line interface for iterm2-shader-engine
-        #
-
         ENGINE="#{HOMEBREW_PREFIX}/bin/iterm2-shader-engine"
         PROCESS_NAME="iterm2-shader-engine"
 
@@ -60,23 +54,22 @@ cask "iterm2-shader-cli" do
         case "${1}" in
           start)
             if pgrep -x "$PROCESS_NAME" > /dev/null 2>&1; then
-              echo "▸ Shader daemon is already running (PID $(pgrep -x $PROCESS_NAME))"
-            else
-              "$ENGINE" > /dev/null 2>&1 &
-              echo "▸ Shader daemon launched (PID $!)"
+              echo "▸ Clearing stale daemon instance..."
+              killall -9 "$PROCESS_NAME" >/dev/null 2>&1
+              sleep 0.3
+              clear_iterm_bg
             fi
+            "$ENGINE" > /dev/null 2>&1 &
+            echo "▸ Shader daemon launched (PID $!)"
             ;;
           stop)
             if pgrep -x "$PROCESS_NAME" > /dev/null 2>&1; then
               killall "$PROCESS_NAME" 2>/dev/null
-
-              # Wait up to 3 seconds for clean Swift teardown
               COUNTER=0
               while pgrep -x "$PROCESS_NAME" > /dev/null 2>&1 && [ $COUNTER -lt 30 ]; do
                 sleep 0.1
                 COUNTER=$((COUNTER + 1))
               done
-
               clear_iterm_bg
               echo "▸ Shader daemon stopped"
             else
@@ -136,12 +129,9 @@ cask "iterm2-shader-cli" do
     end
 
     uninstall_preflight do
-      # Kill the daemon if running
       system_command "/usr/bin/pkill",
                      args: ["-x", "iterm2-shader-engine"],
                      must_succeed: false
-
-      # Remove wrapper and metallib
       wrapper_path = "#{HOMEBREW_PREFIX}/bin/iterm2-shader"
       metallib_path = "#{HOMEBREW_PREFIX}/bin/default.metallib"
       File.delete(wrapper_path) if File.exist?(wrapper_path)
@@ -170,6 +160,6 @@ cask "iterm2-shader-cli" do
       Auto-terminates when parent terminal session exits.
 
       Report issues:
-        https://github.com/yatharth023/iTerm2Shader/issues
+        https://github.com/yatharth023/iTerm2ShaderCLI/issues
     EOS
   end
